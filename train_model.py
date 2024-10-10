@@ -1,63 +1,95 @@
+import datetime
+import time
 
-import colbert
-from colbert import Indexer, Searcher
-from colbert.infra import Run, RunConfig, ColBERTConfig
-from colbert.data import Queries, Collection
 from datasets import load_dataset
 
-if __name__ == '__main__':
+from colbert import Indexer, Searcher
+from colbert.infra import Run, RunConfig, ColBERTConfig
+import nltk
+from nltk.tokenize import word_tokenize
 
-    dataset = 'lifestyle'
-    datasplit = 'dev'
+training_set = []
+collection = []
+index_name = f'sushi.files.index'
+experiment_name = 'sushi'
+checkpoint = ''
+labels = []
 
-    collection_dataset = load_dataset("colbertv2/lotte_passages", dataset, trust_remote_code=True)
-    collection = [x['text'] for x in collection_dataset[datasplit + '_collection']]
+def get_first_n_tokens(text, n):
+    tokens = word_tokenize(text)
+    return ''.join(tokens[:n])
 
-    queries_dataset = load_dataset("colbertv2/lotte", dataset, trust_remote_code=True)
-    queries = [x['query'] for x in queries_dataset['search_' + datasplit]]
+def create_dataset(trainingSet):
+    id = []
+    docno = []
+    folder = []
+    box = []
+    title = []
+    ocr = []
+    folder_label = []
 
-    f'Loaded {len(queries)} queries and {len(collection):,} passages'
+    for idx, dictA in enumerate(trainingSet):
+        id.append(idx)
+        docno.append(dictA["docno"])
+        folder.append(dictA["folder"])
+        box.append(dictA["box"])
+        title.append(dictA["title"])
+        ocr.append(dictA["ocr"])
+        folder_label.append(dictA["folderlabel"])
 
-    nbits = 2  # encode each dimension with 2 bits
-    doc_maxlen = 300  # truncate passages at 300 tokens
-    max_id = 10000
+    merged_text = [m + ' ' + n + ' ' + o for m, n, o in zip(title, ocr, folder_label)]
 
-    index_name = f'{dataset}.{datasplit}.{nbits}bits'
+    print('Merged Text : ', merged_text[0])
 
-    answer_pids = [x['answers']['answer_pids'] for x in queries_dataset['search_' + datasplit]]
-    filtered_queries = [q for q, apids in zip(queries, answer_pids) if any(x < max_id for x in apids)]
+    global collection
+    collection = merged_text
 
-    f'Filtered down to {len(filtered_queries)} queries'
+    global labels
+    labels = folder
 
-    checkpoint = 'colbert-ir/colbertv2.0'
-
-    with Run().context(RunConfig(nranks=1, experiment='notebook')):  # nranks specifies the number of GPUs to use
+def train_colbert_model(nbits, doc_maxlen):
+    print('Starting Indexing: ')
+    with Run().context(RunConfig(nranks=1, experiment='sushi')):  # nranks specifies the number of GPUs to use
         config = ColBERTConfig(doc_maxlen=doc_maxlen, nbits=nbits,
                                kmeans_niters=4)  # kmeans_niters specifies the number of iterations of k-means clustering; 4 is a good and fast default.
         # Consider larger numbers for small datasets.
 
         indexer = Indexer(checkpoint=checkpoint, config=config)
-        indexer.index(name=index_name, collection=collection[:max_id], overwrite=True)
+        indexer.index(name=index_name, collection=collection, overwrite=True)
 
     indexer.get_index()
+    print('Ending Indexing')
 
-    # To create the searcher using its relative name (i.e., not a full path), set
-    # experiment=value_used_for_indexing in the RunConfig.
-    with Run().context(RunConfig(experiment='notebook')):
+def colbert_search(query):
+    with Run().context(RunConfig(experiment='sushi')):
         searcher = Searcher(index=index_name, collection=collection)
 
-    # If you want to customize the search latency--quality tradeoff, you can also supply a
-    # config=ColBERTConfig(ncells=.., centroid_score_threshold=.., ndocs=..) argument.
-    # The default settings with k <= 10 (1, 0.5, 256) gives the fastest search,
-    # but you can gain more extensive search by setting larger values of k or
-    # manually specifying more conservative ColBERTConfig settings (e.g. (4, 0.4, 4096)).
-
-    query = filtered_queries[13]  # try with an in-range query or supply your own
-    print(f"#> {query}")
-
     # Find the top-3 passages for this query
-    results = searcher.search(query, k=3)
+    results = searcher.search(query, k=1000)
 
-    # Print out the top-k retrieved passages
+    ranked_list = []
+
     for passage_id, passage_rank, passage_score in zip(*results):
-        print(f"\t [{passage_rank}] \t\t {passage_score:.1f} \t\t {searcher.collection[passage_id]}")
+        ranked_list.append(labels[passage_id])
+        # print(f"\t{labels[passage_id]} \t\t [{passage_rank}] \t\t {passage_score:.1f} \t\t {searcher.collection[passage_id]}")
+
+    return ranked_list
+
+
+def test_colbert(trainingSet):
+    print(datetime.datetime.now())
+
+    global training_set
+    training_set = trainingSet
+
+    create_dataset(trainingSet)
+
+    global checkpoint
+    checkpoint = 'colbert-ir/colbertv2.0'
+
+    train_colbert_model(2, 300)
+
+    print(colbert_search(''))
+
+    print(datetime.datetime.now())
+

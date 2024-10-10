@@ -19,3 +19,8 @@ dependencies:
     - ujson
     - flask
     - python-dotenv
+    - python-terrier
+    - pytrec-eval-terrier
+    - PyPDF2
+    - nltk
+    - openpyxl
