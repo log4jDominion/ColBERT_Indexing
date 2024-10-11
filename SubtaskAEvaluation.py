@@ -6,7 +6,6 @@
 # - Added detail to terrier package installation comments
 # - Fixed a bug that made the index number unchanging for the random index
 
-import faiss
 import json
 import math
 import os
