@@ -1,4 +1,4 @@
-name: colbert
+name: colbert_gpu
 channels:
   - pytorch
   - nvidia
