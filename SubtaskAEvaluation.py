@@ -152,7 +152,7 @@ def create_trainingSet(trainingDocs, searchFields):
             ocr = f.read()
         else:
             # Extract OCR text from the PDF file
-            f = open(prefix + 'sushi-files/ocr/' + box + '/' + folder + '/' + file, 'rb')
+            f = open(prefix + 'sushi-files/' + box + '/' + folder + '/' + file, 'rb')
             reader = PyPDF2.PdfReader(f)
             pages = len(reader.pages)
             maxPages = 1  # Increase this number if you want to index more of the OCR text
