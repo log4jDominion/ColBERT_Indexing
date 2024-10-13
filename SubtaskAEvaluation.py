@@ -168,7 +168,7 @@ def create_trainingSet(trainingDocs, searchFields):
                 print(f'Replaced OCR: //{ocr}// with Title //{title}//')
                 ocr = title
 
-
+        print(ocr)
         trainingSet.append(
             {'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': ocr, 'folderlabel': label})
 
