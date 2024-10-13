@@ -148,7 +148,7 @@ def create_trainingSet(trainingDocs, searchFields):
             title = naraTitle
 
         if sys.argv[2] == 'GPT':
-            f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'), 'rb')
+            f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'), 'rt')
             ocr = f.read()
         else:
             # Extract OCR text from the PDF file
