@@ -12,6 +12,7 @@ import os
 import random
 import re
 import shutil
+import sys
 
 import PyPDF2
 import numpy as np
@@ -20,13 +21,6 @@ import pyterrier as pt  # For this to work you should pip install python-terrier
 import pytrec_eval  # For this to work, you should pip install pytrec-eval-terrier, which requires a version of numpy before 2.0 (such as 1.26.4)
 
 import train_model
-
-
-### ...................Multi-Label classification...........................###
-
-
-###....................End Multi-Label Classification........................###
-
 
 
 def readExperimentControlFile(fileName):
@@ -139,6 +133,7 @@ def create_trainingSet(trainingDocs, searchFields):
         # Construct the best available title (either Brown, or trimmed NARA)
         brownTitle = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Brown Title'].iloc[0])
         naraTitle = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'NARA Title'].iloc[0])
+        ocr = ''
         if brownTitle != 'nan':
             title = brownTitle
         else:
@@ -152,22 +147,27 @@ def create_trainingSet(trainingDocs, searchFields):
                 naraTitle = naraTitle[:end]
             title = naraTitle
 
-        # Extract OCR text from the PDF file
-        f = open(prefix + 'sushi-files/' + box + '/' + folder + '/' + file, 'rb')
-        reader = PyPDF2.PdfReader(f)
-        pages = len(reader.pages)
-        maxPages = 1  # Increase this number if you want to index more of the OCR text
-        fulltext = ''
-        for i in range(min(pages, maxPages)):
-            page = reader.pages[i]
-            text = page.extract_text().replace('\n', ' ')
-            fulltext = fulltext + text
-        ocr = fulltext
+        if sys.argv[2] == 'GPT':
+            f = open(prefix + 'sushi-files/summary/' + box + '/' + folder + '/' + file, 'rb')
+            ocr = f.read()
+        else:
+            # Extract OCR text from the PDF file
+            f = open(prefix + 'sushi-files/ocr/' + box + '/' + folder + '/' + file, 'rb')
+            reader = PyPDF2.PdfReader(f)
+            pages = len(reader.pages)
+            maxPages = 1  # Increase this number if you want to index more of the OCR text
+            fulltext = ''
+            for i in range(min(pages, maxPages)):
+                page = reader.pages[i]
+                text = page.extract_text().replace('\n', ' ')
+                fulltext = fulltext + text
+            ocr = fulltext
 
-        # Optionally replace any hopelessly short OCR with the document title
-        if noShortOcr and len(ocr) < 5:
-            print(f'Replaced OCR: //{ocr}// with Title //{title}//')
-            ocr = title
+            # Optionally replace any hopelessly short OCR with the document title
+            if noShortOcr and len(ocr) < 5:
+                print(f'Replaced OCR: //{ocr}// with Title //{title}//')
+                ocr = title
+
 
         trainingSet.append(
             {'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': ocr, 'folderlabel': label})
@@ -331,6 +331,12 @@ if __name__ == '__main__':
     # Set JAVA_HOME so that Terrier will work correctly
     os.environ["JAVA_HOME"] = "C:/Program Files/Java/jdk-22/" # Install Java if you don't already have it (tested with JDK 22) and then set this to where you have Java installed
 
+    if sys.argv[1] == 'Complete':
+        control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.2CompleteDocs.json'
+    else:
+        control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1.json'
+
+
     # Set global variables
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
@@ -339,7 +345,7 @@ if __name__ == '__main__':
 
     # Run the experiment
     searchFields = ['title', 'ocr', 'folderlabel'] # Used only with Terrier.  Edit this list to index fewer fields if desired
-    ecf = readExperimentControlFile(prefix+'Ntcir18SushiDryRunExperimentControlFileV1.1.json')
+    ecf = readExperimentControlFile(prefix+control_file)
     results = generateSearchResults(ecf, searchFields)
     writeSearchResults(prefix+'Ntcir18SushiDryRunResultsV1.1.tsv', results, 'Baseline-0')
     evaluateSearchResults(prefix+'Ntcir18SushiDryRunResultsV1.1.tsv', prefix+'Ntcir18SushiDryRunFolderQrelsV1.1.tsv', prefix+'Ntcir18SushiDryRunBoxQrelsV1.1.tsv')

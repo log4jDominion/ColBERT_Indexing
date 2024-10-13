@@ -1,17 +1,15 @@
 import datetime
-import time
+import sys
 
-from datasets import load_dataset
+from nltk.tokenize import word_tokenize
 
 from colbert import Indexer, Searcher
 from colbert.infra import Run, RunConfig, ColBERTConfig
-import nltk
-from nltk.tokenize import word_tokenize
 
 training_set = []
 collection = []
-index_name = f'sushi.files.index'
-experiment_name = 'sushi'
+index_name = sys.argv[4]
+experiment_name = sys.argv[3]
 checkpoint = ''
 labels = []
 
@@ -48,7 +46,7 @@ def create_dataset(trainingSet):
     labels = folder
 
 def train_colbert_model(nbits, doc_maxlen):
-    print('Starting Indexing: ')
+    print(f"Indexing: {len(collection)} records")
     with Run().context(RunConfig(nranks=1, experiment='sushi')):  # nranks specifies the number of GPUs to use
         config = ColBERTConfig(doc_maxlen=doc_maxlen, nbits=nbits,
                                kmeans_niters=4)  # kmeans_niters specifies the number of iterations of k-means clustering; 4 is a good and fast default.
@@ -58,7 +56,6 @@ def train_colbert_model(nbits, doc_maxlen):
         indexer.index(name=index_name, collection=collection, overwrite=True)
 
     indexer.get_index()
-    print('Ending Indexing')
 
 def colbert_search(query):
     with Run().context(RunConfig(experiment='sushi')):
@@ -77,7 +74,7 @@ def colbert_search(query):
 
 
 def test_colbert(trainingSet):
-    print(datetime.datetime.now())
+    print(f"***********************Indexing starts at {datetime.datetime.now()}*************************")
 
     global training_set
     training_set = trainingSet
@@ -89,7 +86,5 @@ def test_colbert(trainingSet):
 
     train_colbert_model(2, 300)
 
-    print(colbert_search(''))
-
-    print(datetime.datetime.now())
+    print(f'***********************Indexing ends at {datetime.datetime.now()}*************************')
 
