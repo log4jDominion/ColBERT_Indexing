@@ -133,7 +133,7 @@ def create_trainingSet(trainingDocs, searchFields):
         # Construct the best available title (either Brown, or trimmed NARA)
         brownTitle = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Brown Title'].iloc[0])
         naraTitle = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'NARA Title'].iloc[0])
-        ocr = ''
+
         if brownTitle != 'nan':
             title = brownTitle
         else:
@@ -147,10 +147,12 @@ def create_trainingSet(trainingDocs, searchFields):
                 naraTitle = naraTitle[:end]
             title = naraTitle
 
-        if sys.argv[2] == 'GPT':
+        ocr = ''
+        summary = ''
+        if sys.argv[2].__contains__('GPT'):
             f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'), 'rt')
-            ocr = f.read()
-        else:
+            summary = f.read()
+        elif sys.argv[2].__contains__('OCR'):
             # Extract OCR text from the PDF file
             f = open(prefix + 'sushi-files/' + box + '/' + folder + '/' + file, 'rb')
             reader = PyPDF2.PdfReader(f)
@@ -168,9 +170,9 @@ def create_trainingSet(trainingDocs, searchFields):
                 print(f'Replaced OCR: //{ocr}// with Title //{title}//')
                 ocr = title
 
-        print(type(ocr))
+        text = summary+ ' ' + ocr
         trainingSet.append(
-            {'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': ocr, 'folderlabel': label})
+            {'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': text, 'folderlabel': label})
 
 
 
