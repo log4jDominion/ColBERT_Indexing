@@ -13,6 +13,7 @@ import random
 import re
 import shutil
 import sys
+from pathlib import Path
 
 import PyPDF2
 import numpy as np
@@ -148,8 +149,8 @@ def create_trainingSet(trainingDocs, searchFields):
             title = naraTitle
 
         if sys.argv[2] == 'GPT':
-            f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'), 'rb')
-            ocr = f.read()
+            f = Path(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'))
+            ocr = f.read_text()
         else:
             # Extract OCR text from the PDF file
             f = open(prefix + 'sushi-files/' + box + '/' + folder + '/' + file, 'rb')
@@ -168,6 +169,7 @@ def create_trainingSet(trainingDocs, searchFields):
                 print(f'Replaced OCR: //{ocr}// with Title //{title}//')
                 ocr = title
 
+        print(type(ocr))
         print(ocr)
         trainingSet.append(
             {'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': ocr, 'folderlabel': label})
