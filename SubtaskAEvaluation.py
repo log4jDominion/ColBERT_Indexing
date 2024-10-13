@@ -336,6 +336,9 @@ if __name__ == '__main__':
     else:
         control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1.json'
 
+    print(f"Control file: {control_file}")
+    print(f"File Text type: {sys.argv[2]}")
+
 
     # Set global variables
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
