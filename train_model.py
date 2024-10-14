@@ -35,7 +35,7 @@ def create_dataset(trainingSet):
         ocr.append(dictA["ocr"])
         folder_label.append(dictA["folderlabel"])
 
-    merged_text = [m + ' ' + n + ' ' + o for m, n, o in zip(title, ocr, folder_label)]
+    merged_text = [m + ' ' + o for m, o in zip(title, folder_label)]
 
     print('Merged Text : ', merged_text[0])
 
