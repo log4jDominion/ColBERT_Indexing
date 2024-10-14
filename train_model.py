@@ -13,9 +13,11 @@ experiment_name = sys.argv[3]
 checkpoint = ''
 labels = []
 
+
 def get_first_n_tokens(text, n):
     tokens = word_tokenize(text)
     return ''.join(tokens[:n])
+
 
 def create_dataset(trainingSet):
     id = []
@@ -35,7 +37,11 @@ def create_dataset(trainingSet):
         ocr.append(dictA["ocr"])
         folder_label.append(dictA["folderlabel"])
 
-    merged_text = [m + ' ' + n + ' ' + o for m, n, o in zip(title, ocr, folder_label)]
+    merged_text = []
+    for m, n, o in zip(title, ocr, folder_label):
+        if type(o) is tuple:
+            o = ''.join(o)
+        merged_text.append(m + ' ' + o + ' ' + n)
 
     print('Merged Text : ', merged_text[0])
 
@@ -44,6 +50,7 @@ def create_dataset(trainingSet):
 
     global labels
     labels = folder
+
 
 def train_colbert_model(nbits, doc_maxlen):
     print(f"Indexing: {len(collection)} records")
@@ -56,6 +63,7 @@ def train_colbert_model(nbits, doc_maxlen):
         indexer.index(name=index_name, collection=collection, overwrite=True)
 
     indexer.get_index()
+
 
 def colbert_search(query):
     with Run().context(RunConfig(experiment='sushi')):
@@ -87,4 +95,3 @@ def test_colbert(trainingSet):
     train_colbert_model(2, 300)
 
     print(f'***********************Indexing ends at {datetime.datetime.now()}*************************')
-
