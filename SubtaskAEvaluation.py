@@ -60,18 +60,142 @@ def trainRandomModel(trainingDoucments): # This simple index identifies the top 
     random.shuffle(index)
     return index[0:1000]
 
+def translateNaraFolderLabel (naraLabel, sncExpansion, sushiFile, sushiFolder):
+    if naraLabel != 'nan':
+        start = naraLabel.find('(')  # Strip part markings
+        if start != -1:
+            naraLabel = naraLabel[:start]
+        naraLabel = naraLabel.replace('BRAZ-A0', 'BRAZ-A 0')  # Fix formatting error
+        naraLabel = naraLabel.replace('BRAZ-E0', 'BRAZ-E 0')  # Fix formatting error
+        naraLabelElements = naraLabel.split()
+        if len(naraLabelElements) in [3, 4]:
+            if len(naraLabelElements) == 3:
+                naraSnc = naraLabelElements[0]
+            else:
+                naraSnc = ' '.join(naraLabelElements[0:2])
+            naraCountryCode = naraLabelElements[-2]
+            naraDate = naraLabelElements[-1]
+            #                print(f'parsed {naraLabel} to {naraSnc} // {naraCountryCode} // {naraDate}')
+            if naraSnc in sncExpansion['SNC'].tolist():
+                label1965 = str(sncExpansion.loc[sncExpansion['SNC'] == naraSnc, 1965].iloc[0])
+                label1963 = str(sncExpansion.loc[sncExpansion['SNC'] == naraSnc, 1963].iloc[0])
+                if label1965 != 'nan':
+                    label = label1965
+                elif label1963 != 'nan':
+                    label = label1963
+                else:
+                    print(f'Unable to translate {naraSnc} for file {sushiFile} in folder {sushiFolder}')
+                    label = naraSnc
+            else:
+                print(f'No expansion for {naraSnc}')
+                label = naraSnc
+        else:
+            print(f"NARA Folder Title doesn't have four parts: {naraLabel}")
+            label = 'Bad NARA Folder Title'
+    return label, naraCountryCode, naraDate
+
+def translateBrownFolderLabel(brownLabel, sncExpansion, sushiFile, sushiFolder):
+    label = ''
+    cleanLabel = brownLabel.replace('_', ' ')
+#    if len(cleanLabel)<20:
+#        print(cleanLabel)
+#    label = re.sub(r'(^[A-Z][A-Za-z]{1,3})(\s?)([(\d{1,2}\s\d{1,2)(\d{1,2}\-\d{1,2})(\d{1.2})(\s)])(\s?)(.*)', r'\1#\3#\5', cleanLabel)
+    datePattern = re.compile(r'(^.*)([\s\-])(1?\d[\-\/][123]?\d[\-\/]?[67]\d)(.*$)')
+    match = datePattern.search(cleanLabel)
+    if match:
+        before = match.group(1).strip()
+        date = match.group(3).strip()
+        if date[-2] in ['6', '7'] and date[-3] not in ['-', '/', ' ']:
+            date = date[0:-2] + '-' + date[-2:]
+#        else:
+#            print(f'Date: {date} Date[-2]: {date[-2]}')
+        after = match.group(4).strip()
+    else:
+        before = cleanLabel
+        date = ''
+        after = ''
+
+    catPattern = re.compile(r'(^[A-Z][A-Za-z]{0,4})(.*)$')
+    match = catPattern.search(before)
+    if match: # and before!='Unknown' and 'Untitled' not in before:
+        category = match.group(1).strip()
+        subcats = match.group(2).strip().strip('-').strip()
+    if not match or len(category)>4:
+        category = ''
+        subcats = ''
+        label = before
+
+    snc1Pattern = re.compile(r'(^\d\d?)(.*)')
+    match = snc1Pattern.search(subcats)
+    if match:
+        level1 = match.group(1).strip()
+        remainder = match.group(2).strip()
+    else:
+        level1 = ''
+        remainder = subcats
+
+    snc2Pattern = re.compile(r'(\-)(\d\d?)(.*)')
+    match = snc2Pattern.search(remainder)
+    if match:
+        level2 = match.group(2).strip()
+        remainder = match.group(3).strip()+' '+after
+        remainder = remainder.strip()
+    else:
+        level2 = ''
+        remainder = remainder + ' ' + after
+        remainder = remainder.strip().strip('-').strip()
+
+    if category != '':
+        if level1 != '':
+            if level2 != '':
+                brownSnc = category.upper() + ' ' + level1 + '-' + level2
+            else:
+                brownSnc = category.upper() + ' ' + level1
+        else:
+            brownSnc = category.upper()
+    else:
+         brownSnc = 'Unknown'
+
+    if brownSnc in sncExpansion['SNC'].tolist():
+        label1965 = str(sncExpansion.loc[sncExpansion['SNC'] == brownSnc, 1965].iloc[0])
+        label1963 = str(sncExpansion.loc[sncExpansion['SNC'] == brownSnc, 1963].iloc[0])
+        if label1965 != 'nan':
+            label2 = label1965
+        elif label1963 != 'nan':
+            label2 = label1963
+        else:
+            print(f'Unable to translate {brownSnc} for file {sushiFile} in folder {sushiFolder}')
+            label2 = brownSnc
+    else:
+        print(f'No expansion for {brownSnc}')
+        label2 = 'Unknown'
+
+    if label == '':
+        if label2 == 'Unknown':
+            label = remainder
+        else:
+            label = label2
+
+#    if len (cleanLabel) < 2000:
+#        print(f'{cleanLabel:55}   Brown SNC: {brownSnc:10}   Date: {date:15}   Label: {label:4} ')
+
+    if len(cleanLabel)<20:
+        return label
+    else:
+        return cleanLabel
+
 def create_trainingSet(trainingDocs, searchFields):
-    noShortOcr = False  # Set to true if you want to replace OCR text that is nearly empty with the document title
+    noShortOcr = False # Set to true if you want to replace OCR text that is nearly empty with the document title
     global prefix
-    global seq  # Used to control creation of a separate index for each training set
-    global unix  # Used to accommodate Terrier's use of var for indexes with Unix
-    trainingSet = []
+    global seq # Used to control creation of a separate index for each training set
+    global unix # Used to accommodate Terrier's use of var for indexes with Unix
+    trainingSet=[]
 
     # Read the Sushi Medadata and SNC excel files
     try:
-        xls = pd.ExcelFile(prefix + 'SubtaskACollectionMetadataV1.1.xlsx')
+        xls = pd.ExcelFile(prefix+'SubtaskACollectionMetadataV1.1.xlsx')
         fileMetadata = xls.parse(xls.sheet_names[0])
-        xls = pd.ExcelFile(prefix + 'SncTranslationV1.1.xlsx')
+        xls = pd.ExcelFile(prefix+'SncTranslationV1.2.xlsx')
         sncExpansion = xls.parse(xls.sheet_names[0])
     except Exception as e:
         print(f"Error reading Excel file: {e}")
@@ -81,70 +205,69 @@ def create_trainingSet(trainingDocs, searchFields):
     for trainingDoc in trainingDocs:
 
         # Read the box/folder/file directory structure
-        sushiFile = trainingDoc[
-                    -10:]  # This extracts the file name and ignores the box and folder labels which we will get from the medatada
+        sushiFile = trainingDoc[-10:] # This extracts the file name and ignores the box and folder labels which we will get from the medatada
         file = sushiFile
         folder = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Sushi Folder'].iloc[0])
         box = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Sushi Box'].iloc[0])
 
         # Construct the best available folder label (either by SNC lookup or by using the folder label text)
-        brownLabel = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Brown Folder Name'].iloc[0])
         naraLabel = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'NARA Folder Name'].iloc[0])
+        brownLabel = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Brown Folder Name'].iloc[0])
         if naraLabel != 'nan':
-            start = naraLabel.find('(')  # Strip part markings
-            if start != -1:
-                naraLabel = naraLabel[:start]
-            naraLabel = naraLabel.replace('BRAZ-A0', 'BRAZ-A 0')  # Fix formatting error
-            naraLabel = naraLabel.replace('BRAZ-E0', 'BRAZ-E 0')  # Fix formatting error
-            naraLabelElements = naraLabel.split()
-            if len(naraLabelElements) in [3, 4]:
-                if len(naraLabelElements) == 3:
-                    naraSnc = naraLabelElements[0]
-                else:
-                    naraSnc = ' '.join(naraLabelElements[0:2])
-                naraCountryCode = naraLabelElements[-2]
-                naraDate = naraLabelElements[-1]
-                #                print(f'parsed {naraLabel} to {naraSnc} // {naraCountryCode} // {naraDate}')
-                if naraSnc in sncExpansion['SNC'].tolist():
-                    label1965 = str(sncExpansion.loc[sncExpansion['SNC'] == naraSnc, 1965].iloc[0])
-                    label1963 = str(sncExpansion.loc[sncExpansion['SNC'] == naraSnc, 1963].iloc[0])
-                    if label1965 != 'nan':
-                        label = label1965
-                    elif label1963 != 'nan':
-                        label = label1963
-                    else:
-                        print(f'Unable to translate {naraSnc} for file {sushiFile} in folder {folder}')
-                        label = naraSnc
-                else:
-                    print(f'No expansion for {naraSnc}')
-                    label = naraSnc
-
-            else:
-                print(f"NARA Folder Title doesn't have four parts: {naraLabel}")
-                label = 'Bad NARA Folder Title'
+            label = translateNaraFolderLabel(naraLabel, sncExpansion, file, folder)
+#            start = naraLabel.find('(') # Strip part markings
+#            if start != -1:
+#                naraLabel = naraLabel[:start]
+#            naraLabel = naraLabel.replace('BRAZ-A0', 'BRAZ-A 0') # Fix formatting error
+#            naraLabel = naraLabel.replace('BRAZ-E0', 'BRAZ-E 0')  # Fix formatting error
+#            naraLabelElements = naraLabel.split()
+#            if len(naraLabelElements) in [3,4]:
+#                if len(naraLabelElements)==3:
+#                    naraSnc = naraLabelElements[0]
+#                else:
+#                    naraSnc = ' '.join(naraLabelElements[0:2])
+#                naraCountryCode = naraLabelElements[-2]
+#                naraDate = naraLabelElements[-1]
+#                print(f'parsed {naraLabel} to {naraSnc} // {naraCountryCode} // {naraDate}')
+#                if naraSnc in sncExpansion['SNC'].tolist():
+#                    label1965 = str(sncExpansion.loc[sncExpansion['SNC']==naraSnc, 1965].iloc[0])
+#                    label1963 = str(sncExpansion.loc[sncExpansion['SNC']==naraSnc, 1963].iloc[0])
+#                    if label1965 != 'nan':
+#                        label = label1965
+#                    elif label1963 != 'nan':
+#                        label = label1963
+#                    else:
+#                        print(f'Unable to translate {naraSnc} for file {sushiFile} in folder {sushiFolder}')
+#                        label=naraSnc
+#                else:
+#                    print(f'No expansion for {naraSnc}')
+#                    label = naraSnc
+#            else:
+#                print(f"NARA Folder Title doesn't have four parts: {naraLabel}")
+#                label = 'Bad NARA Folder Title'
         else:
             if brownLabel != 'nan':
-                label = brownLabel.replace('_', ' ')
+                label = translateBrownFolderLabel(brownLabel, sncExpansion, file, folder)
+#                label = brownLabel.replace('_', ' ')
             else:
-                print(f'Missing both NARA and Brown folder labels for file {sushiFile} in folder {folder}')
+                print(f'Missing both NARA and Brown folder labels for file {file} in folder {folder}')
                 label = 'No NARA or Brown Folder Title'
-        #        print(f'File {file} Folder {folder} has expanded label {label}')
+#        print(f'File {file} Folder {folder} has expanded label {label}')
 
         # Construct the best available title (either Brown, or trimmed NARA)
         brownTitle = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'Brown Title'].iloc[0])
         naraTitle = str(fileMetadata.loc[fileMetadata['Sushi File'] == sushiFile, 'NARA Title'].iloc[0])
-
         if brownTitle != 'nan':
-            title = brownTitle
+            title=brownTitle
         else:
             start = naraTitle.find('Concerning')
             if start != -1:
-                naraTitle = naraTitle[start + 11:]
+                naraTitle=naraTitle[start+11:]
             end1 = naraTitle.rfind(':')
             end2 = naraTitle.rfind('(')
-            end = min(end1, end2)
+            end = min(end1,end2)
             if end != -1:
-                naraTitle = naraTitle[:end]
+                naraTitle=naraTitle[:end]
             title = naraTitle
 
         ocr = ''
@@ -170,11 +293,8 @@ def create_trainingSet(trainingDocs, searchFields):
                 print(f'Replaced OCR: //{ocr}// with Title //{title}//')
                 ocr = title
 
-        text = summary+ ' ' + ocr
-        trainingSet.append(
-            {'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': text, 'folderlabel': label})
-
-
+        text = summary + ' ' + ocr
+        trainingSet.append({'docno': file, 'folder': folder, 'box': box, 'title': title, 'ocr': text, 'folderlabel': label})
 
     return trainingSet
 
