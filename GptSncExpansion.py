@@ -514,7 +514,7 @@ if __name__ == '__main__':
     os.environ["JAVA_HOME"] = "/Users/shashank/Research/java/jdk-22.0.1.jdk.amd/Contents/Home/" # Install Java if you don't already have it (tested with JDK 22) and then set this to where you have Java installed
 
     # Set global variables
-    prefix = '/Users/shashank/Research/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
+    prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
     unix = False # Set to false for Windows, true for Unix.  This adapts the code to the locations where Terrier writes its index.
     model = 'colbert' # Set to 'random' for the random model or to 'terrier' for the Terrier model
