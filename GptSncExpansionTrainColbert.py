@@ -1,5 +1,6 @@
 import datetime
 import sys
+import nltk
 
 from nltk.tokenize import word_tokenize
 
@@ -43,7 +44,9 @@ def create_dataset(trainingSet):
     for m, n, o, p in zip(title, ocr, summary, folder_label):
         if type(o) is tuple:
             o = ''.join(o)
-        merged_text.append(m + ' ' + p + ' ' + n + ' ' + o)
+        all_text = m + ' ' + p + ' ' + n + ' ' + o
+        merged_text.append(all_text)
+        print(len(nltk.word_tokenize(all_text)))
 
     print('Merged Text : ', merged_text[0])
 

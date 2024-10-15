@@ -263,7 +263,7 @@ def createTrainingSet(trainingDocs, searchFields):
             ocr = title
 
         # Read the GPT Summary
-        f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf', '.txt'), 'r',
+        f = open(prefix + 'summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf', '.txt'), 'r',
                  encoding='utf8')
         summary = f.read()
         summary = replace_straight_quotes(summary)
@@ -286,7 +286,7 @@ def createTrainingSet(trainingDocs, searchFields):
     for snc in known:
         print(snc, known[snc]['title'])
 
-    dir = '/Users/shashank/Research/sushi/sushi-files/'
+    dir = prefix+'sushi-files/'
     good = 0
     bad = 0
     nochange = 0
