@@ -263,7 +263,7 @@ def createTrainingSet(trainingDocs, searchFields):
             ocr = title
 
         # Read the GPT Summary
-        f = open(prefix + 'summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf', '.txt'), 'r',
+        f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf', '.txt'), 'r',
                  encoding='utf8')
         summary = f.read()
         summary = replace_straight_quotes(summary)
