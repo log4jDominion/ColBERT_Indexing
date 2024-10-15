@@ -7,6 +7,8 @@ from nltk.tokenize import word_tokenize
 from colbert import Indexer, Searcher
 from colbert.infra import Run, RunConfig, ColBERTConfig
 
+nltk.download('punkt_tab')
+
 training_set = []
 collection = []
 index_name = sys.argv[2]
