@@ -48,7 +48,7 @@ def create_dataset(trainingSet):
             o = ''.join(o)
         all_text = m + ' ' + p + ' ' + n + ' ' + o
         merged_text.append(all_text)
-        print(len(nltk.word_tokenize(all_text)))
+        print(f"Token length: {len(nltk.word_tokenize(all_text))}")
 
     print('Merged Text : ', merged_text[0])
 
