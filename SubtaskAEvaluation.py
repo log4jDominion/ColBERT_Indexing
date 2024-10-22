@@ -273,7 +273,7 @@ def create_trainingSet(trainingDocs, searchFields):
         ocr = ''
         summary = ''
         if sys.argv[2].__contains__('GPT'):
-            f = open(prefix + 'sushi-files/summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'), 'rt')
+            f = open(prefix + 'summary/prompt-1/' + box + '/' + folder + '/' + file.replace('.pdf','.txt'), 'rt')
             summary = f.read()
         elif sys.argv[2].__contains__('OCR'):
             # Extract OCR text from the PDF file
