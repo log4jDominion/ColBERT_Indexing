@@ -20,7 +20,7 @@ import pandas as pd
 import pyterrier as pt  # For this to work you should pip install python-terrier
 import pytrec_eval  # For this to work, you should pip install pytrec-eval-terrier, which requires a version of numpy before 2.0 (such as 1.26.4)
 
-import TrainColbertWithText as train_model
+import TrainColbertWithQueryResults as train_model
 
 
 def readExperimentControlFile(fileName):
