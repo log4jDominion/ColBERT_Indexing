@@ -16,7 +16,6 @@ index_name = sys.argv[4]
 experiment_name = sys.argv[3]
 checkpoint = ''
 labels = []
-index = 0
 queries_ranked_list = []
 file_index = 0
 
@@ -81,9 +80,11 @@ def colbert_search(query):
 
     ranked_list = []
 
+    index = 0
     for passage_id, passage_rank, passage_score in zip(*results):
         ranked_list.append(labels[passage_id])
-        queries_ranked_list.append({'id': (index), 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
+        queries_ranked_list.append({'id': index, 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
+        index += 1
         # print(f"\t{labels[passage_id]} \t\t [{passage_rank}] \t\t {passage_score:.1f} \t\t {searcher.collection[passage_id]}")
 
     return ranked_list
