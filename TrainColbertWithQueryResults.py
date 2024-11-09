@@ -105,8 +105,6 @@ def test_colbert(trainingSet):
 
     global file_index
     file_name = f'queries_ranked_list_{file_index}.xlsx'
-
-    global file_index
     file_index += 1
 
     df.to_excel(file_name, header=True, index=True)
