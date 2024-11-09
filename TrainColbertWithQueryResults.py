@@ -103,6 +103,7 @@ def test_colbert(trainingSet):
     train_colbert_model(2, 500)
     df = pd.DataFrame(queries_ranked_list)
 
+    global file_index
     file_name = f'queries_ranked_list_{file_index}.xlsx'
 
     global file_index
