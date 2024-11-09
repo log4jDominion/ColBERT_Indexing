@@ -364,6 +364,7 @@ def generateSearchResults(ecf, searchFields):
             rankedFolderList = search(query, index)
             results[i]['RankedList'] = rankedFolderList
             i+=1
+        train_model.write_search_results()
     return results
 
 def writeSearchResults(fileName, results, runName):
@@ -463,6 +464,8 @@ if __name__ == '__main__':
 
 
     # Set global variables
+    #control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1Dev.json'
+    #prefix = '/Users/shashank/Research/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
     unix = False # Set to false for Windows, true for Unix.  This adapts the code to the locations where Terrier writes its index.

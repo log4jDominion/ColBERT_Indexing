@@ -16,6 +16,7 @@ index_name = sys.argv[4]
 experiment_name = sys.argv[3]
 checkpoint = ''
 labels = []
+
 queries_ranked_list = []
 index = 0
 file_index = 0
@@ -79,7 +80,7 @@ def colbert_search(query):
 
     for passage_id, passage_rank, passage_score in zip(*results):
         ranked_list.append(labels[passage_id])
-        queries_ranked_list.append({'id': index, 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
+        append_to_query_results({'id': index, 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
         print({'id': index, 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
         #print(f"\t{index} \t\t {labels[passage_id]} \t\t [{passage_rank}] \t\t {passage_score:.1f} \t\t {searcher.collection[passage_id]}")
 
@@ -87,11 +88,31 @@ def colbert_search(query):
     return ranked_list
 
 
+def init_query_ranked_list():
+    global queries_ranked_list
+    queries_ranked_list = []
+
+
+def append_to_query_results(row):
+    global queries_ranked_list
+    queries_ranked_list.append(row)
+
+
+def write_search_results():
+    global file_index
+    global queries_ranked_list
+    df = pd.DataFrame(queries_ranked_list)
+
+    file_name = f'queries_ranked_list_{file_index}.xlsx'
+    df.to_excel(file_name, header=True, index=True)
+    file_index += 1
+
+
+
 def test_colbert(trainingSet):
     print(f"***********************Indexing starts at {datetime.datetime.now()}*************************")
 
-    global queries_ranked_list
-    queries_ranked_list = []
+    init_query_ranked_list()
 
     global training_set
     training_set = trainingSet
@@ -102,12 +123,4 @@ def test_colbert(trainingSet):
     checkpoint = 'colbert-ir/colbertv2.0'
 
     train_colbert_model(2, 500)
-    df = pd.DataFrame(queries_ranked_list)
-
-    global file_index
-    file_name = f'queries_ranked_list_{file_index}.xlsx'
-    file_index += 1
-
-    df.to_excel(file_name, header=True, index=True)
-
     print(f'***********************Indexing ends at {datetime.datetime.now()}*************************')
