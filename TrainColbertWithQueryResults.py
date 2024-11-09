@@ -21,11 +21,6 @@ index = 0
 file_index = 0
 
 
-def get_first_n_tokens(text, n):
-    tokens = word_tokenize(text)
-    return ''.join(tokens[:n])
-
-
 def create_dataset(trainingSet):
     id = []
     docno = []
@@ -78,22 +73,25 @@ def colbert_search(query):
 
     # Find the top-3 passages for this query
     results = searcher.search(query, k=5)
+    global index
 
     ranked_list = []
 
     for passage_id, passage_rank, passage_score in zip(*results):
         ranked_list.append(labels[passage_id])
-        global index
         queries_ranked_list.append({'id': index, 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
         print({'id': index, 'passage_rank': passage_rank, 'passage_id': passage_id, 'passage_desc': labels[passage_id]})
-        index += 1
         #print(f"\t{index} \t\t {labels[passage_id]} \t\t [{passage_rank}] \t\t {passage_score:.1f} \t\t {searcher.collection[passage_id]}")
 
+    index += 1
     return ranked_list
 
 
 def test_colbert(trainingSet):
     print(f"***********************Indexing starts at {datetime.datetime.now()}*************************")
+
+    global queries_ranked_list
+    queries_ranked_list = []
 
     global training_set
     training_set = trainingSet
