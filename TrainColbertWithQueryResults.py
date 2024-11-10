@@ -3,9 +3,10 @@ import sys
 
 
 import pandas as pd
-from nltk.tokenize import word_tokenize
+import torch
 
-from colbert import Indexer, Searcher
+from colbert import Indexer, Searcher, Trainer
+from colbert.data import Queries
 from colbert.infra import Run, RunConfig, ColBERTConfig
 
 import faiss
@@ -47,6 +48,9 @@ def create_dataset(trainingSet):
         merged_text.append(m + ' ' + o + ' ' + n)
 
     print('Merged Text : ', merged_text[0])
+
+    df = pd.DataFrame(merged_text)
+    df.to_csv(f'training_set_{file_index}.tsv', sep='\t', index=True)
 
     global collection
     collection = merged_text
@@ -103,8 +107,8 @@ def write_search_results():
     global queries_ranked_list
     df = pd.DataFrame(queries_ranked_list)
 
-    file_name = f'queries_ranked_list_{file_index}.xlsx'
-    df.to_excel(file_name, header=True, index=True)
+    file_name = f'queries_ranked_list_{file_index}.tsv'
+    df.to_csv(file_name, sep='\t', header=False, index=True)
     file_index += 1
 
 
@@ -124,3 +128,5 @@ def test_colbert(trainingSet):
 
     train_colbert_model(2, 500)
     print(f'***********************Indexing ends at {datetime.datetime.now()}*************************')
+
+

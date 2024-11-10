@@ -184,7 +184,7 @@ def translateBrownFolderLabel(brownLabel, sncExpansion, sushiFile, sushiFolder):
     else:
         return cleanLabel
 
-def create_trainingSet(trainingDocs, searchFields):
+def create_trainingSet(trainingDocs, searchFields, index):
     noShortOcr = False # Set to true if you want to replace OCR text that is nearly empty with the document title
     global prefix
     global seq # Used to control creation of a separate index for each training set
@@ -298,8 +298,8 @@ def create_trainingSet(trainingDocs, searchFields):
 
     return trainingSet
 
-def trainColbertModel(trainingDocs, searchFields):
-    trainingSet = create_trainingSet(trainingDocs, searchFields)
+def trainColbertModel(trainingDocs, searchFields, index):
+    trainingSet = create_trainingSet(trainingDocs, searchFields, index)
 
     train_model.test_colbert(trainingSet)
 
@@ -320,7 +320,7 @@ def trainTerrierModel(trainingDocs, searchFields):
     BM25 = pt.BatchRetrieve(index, wmodel="BM25", metadata=['docno', 'folder', 'box'], num_results=1000)
     return BM25
 
-def trainModel(trainingDocuments, searchFields):
+def trainModel(trainingDocuments, searchFields, index):
     global seq
     global model
     print(f'Training Called, preparing index for experiment set {seq+1}')
@@ -329,7 +329,7 @@ def trainModel(trainingDocuments, searchFields):
     elif model == 'terrier':
         return trainTerrierModel(trainingDocuments, searchFields)
     else:
-        return trainColbertModel(trainingDocuments, searchFields)
+        return trainColbertModel(trainingDocuments, searchFields, index)
 
 def randomSearch(query, index): # This search ignores the query and returns the same ranked list of folders every time
     return index
@@ -354,16 +354,23 @@ def search(query, index):
 def generateSearchResults(ecf, searchFields):
     results = []
     i = 0
+    ctr = 0
     for experimentSet in ecf['ExperimentSets']:
-        index = trainModel(experimentSet['TrainingDocuments'], searchFields)
+        index = trainModel(experimentSet['TrainingDocuments'], searchFields, ctr)
         topics = list(experimentSet['Topics'].keys())
+        queries_list = []
         for j in range(len(topics)):
             results.append({})
             results[i]['Id'] = topics[j]
             query = experimentSet['Topics'][topics[j]]['TITLE']
+            queries_list.append(query)
             rankedFolderList = search(query, index)
             results[i]['RankedList'] = rankedFolderList
             i+=1
+
+        df = pd.DataFrame(queries_list)
+        df.to_csv(f'queries_list_{ctr}.tsv', sep='\t', index=True)
+        ctr += 1
         train_model.write_search_results()
     return results
 
@@ -464,7 +471,7 @@ if __name__ == '__main__':
 
 
     # Set global variables
-    #control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1Dev.json'
+    # control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1Dev.json'
     #prefix = '/Users/shashank/Research/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
