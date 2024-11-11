@@ -21,6 +21,7 @@ import pyterrier as pt  # For this to work you should pip install python-terrier
 import pytrec_eval  # For this to work, you should pip install pytrec-eval-terrier, which requires a version of numpy before 2.0 (such as 1.26.4)
 
 import TrainColbertWithQueryResults as train_model
+import FineTuningColbert as fine_tuned_model
 
 
 def readExperimentControlFile(fileName):
@@ -320,6 +321,11 @@ def trainTerrierModel(trainingDocs, searchFields):
     BM25 = pt.BatchRetrieve(index, wmodel="BM25", metadata=['docno', 'folder', 'box'], num_results=1000)
     return BM25
 
+
+def train_fine_tuned_colbert(trainingDocs, searchFields, index):
+    trainingSet = create_trainingSet(trainingDocs, searchFields, index)
+    return fine_tuned_model.fine_tuning_model(trainingSet)
+
 def trainModel(trainingDocuments, searchFields, index):
     global seq
     global model
@@ -328,6 +334,8 @@ def trainModel(trainingDocuments, searchFields, index):
         return trainRandomModel(trainingDocuments)
     elif model == 'terrier':
         return trainTerrierModel(trainingDocuments, searchFields)
+    elif model == 'colbert_fine_tune':
+        return train_fine_tuned_colbert(trainingDocuments, searchFields, index)
     else:
         return trainColbertModel(trainingDocuments, searchFields, index)
 
@@ -342,12 +350,14 @@ def terrierSearch(query, engine):
     rankedList.drop_duplicates(inplace=True)
     return rankedList.tolist()
 
-def search(query, index):
+def search(query, query_index, index):
     global model
     if model=='random':
         return randomSearch(query, index)
     elif model=='terrier':
         return terrierSearch(query, index)
+    elif model=='colbert_fine_tune':
+        return fine_tuned_model.fetch_results(query_index, index)
     else:
         return train_model.colbert_search(query)
 
@@ -364,14 +374,14 @@ def generateSearchResults(ecf, searchFields):
             results[i]['Id'] = topics[j]
             query = experimentSet['Topics'][topics[j]]['TITLE']
             queries_list.append(query)
-            rankedFolderList = search(query, index)
+            rankedFolderList = search(query, j, index)
             results[i]['RankedList'] = rankedFolderList
             i+=1
 
-        df = pd.DataFrame(queries_list)
-        df.to_csv(f'queries_list_{ctr}.tsv', sep='\t', index=True)
-        ctr += 1
-        train_model.write_search_results()
+        # df = pd.DataFrame(queries_list)
+        # df.to_csv(f'queries_list_{ctr}.tsv', sep='\t', index=True)
+        # ctr += 1
+        # train_model.write_search_results()
     return results
 
 def writeSearchResults(fileName, results, runName):
@@ -473,12 +483,12 @@ if __name__ == '__main__':
 
 
     # Set global variables
-    # control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1Dev.json'
+    #control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1.json'
     #prefix = '/Users/shashank/Research/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
     unix = False # Set to false for Windows, true for Unix.  This adapts the code to the locations where Terrier writes its index.
-    model = 'colbert' # Set to 'random' for the random model or to 'terrier' for the Terrier model
+    model = 'colbert_fine_tune' # Set to 'random' for the random model or to 'terrier' for the Terrier model
 
     # Run the experiment
     searchFields = ['title', 'ocr', 'folderlabel'] # Used only with Terrier.  Edit this list to index fewer fields if desired

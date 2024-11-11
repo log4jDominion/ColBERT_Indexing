@@ -1,8 +1,19 @@
+import csv
+
 from colbert import Indexer, Searcher, Trainer
 from colbert.data import Queries
 from colbert.infra import Run, RunConfig, ColBERTConfig
 
-if __name__ == '__main__':
+result_file_index = -1
+labels = []
+
+def fine_tuning_model(training_dataset):
+    global result_file_index
+    result_file_index += 1
+
+    global labels
+    labels = [dictionary['folder'] for dictionary in training_dataset]
+
     # with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
     #     config = ColBERTConfig(
     #         nbits=2,
@@ -36,4 +47,25 @@ if __name__ == '__main__':
         searcher = Searcher(index="sushi.training.index", config=config)
         queries = Queries("complete_queries_list.tsv")
         ranking = searcher.search_all(queries, k=10)
-        ranking.save("complete.queries.ranking.tsv")
+        return ranking.save(f"sushi.test.run.{result_file_index}.ranking.tsv")
+
+
+def fetch_results(query_index, rank_file_path):
+    result = []
+    with open(rank_file_path, mode='r', newline='') as file:
+        reader = csv.reader(file, delimiter='\t')
+
+        for row in reader:
+            if len(row) >= 2:  # Ensure there are at least two columns
+                first_col_value = int(row[0])
+                second_col_value = int(row[1])
+
+                # Add the second column value to the list of the first column's key
+                if first_col_value == query_index:
+                    result.append(labels[second_col_value])
+
+    return result
+
+
+if __name__ == '__main__':
+    fine_tuning_model()
