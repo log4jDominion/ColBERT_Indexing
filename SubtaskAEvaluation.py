@@ -463,6 +463,8 @@ if __name__ == '__main__':
 
     if sys.argv[1] == 'Complete':
         control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.2CompleteDocs.json'
+    elif sys.argv[1] == 'Combined':
+        control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1Combined.json'
     else:
         control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1.json'
 
