@@ -4,6 +4,8 @@ import random
 import torch.nn as nn
 import numpy as np
 
+from torch import distributed as dist
+
 from transformers import AdamW, get_linear_schedule_with_warmup
 from colbert.infra import ColBERTConfig
 from colbert.training.rerank_batcher import RerankBatcher
@@ -52,9 +54,8 @@ def train(config: ColBERTConfig, triples, queries=None, collection=None):
     colbert = colbert.to(DEVICE)
     colbert.train()
 
-    colbert = torch.nn.parallel.DistributedDataParallel(colbert, device_ids=[config.rank],
-                                                        output_device=config.rank,
-                                                        find_unused_parameters=True)
+    dist.init_process_group(backend='gloo')
+    colbert = torch.nn.parallel.DistributedDataParallel(colbert, find_unused_parameters=True)
 
     optimizer = AdamW(filter(lambda p: p.requires_grad, colbert.parameters()), lr=config.lr, eps=1e-8)
     optimizer.zero_grad()
@@ -143,7 +144,7 @@ def train(config: ColBERTConfig, triples, queries=None, collection=None):
 
     if config.rank < 1:
         print_message("#> Done with all triples!")
-        ckpt_path = manage_checkpoints(config, colbert, optimizer, batch_idx+1, savepath=None, consumed_all_triples=True)
+        ckpt_path = manage_checkpoints(config, colbert, optimizer, 1, savepath=None, consumed_all_triples=True)
 
         return ckpt_path  # TODO: This should validate and return the best checkpoint, not just the last one.
 
