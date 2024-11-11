@@ -46,7 +46,7 @@ def fine_tuning_model(training_dataset):
         )
         searcher = Searcher(index="sushi.training.index", config=config)
         queries = Queries("complete_queries_list.tsv")
-        ranking = searcher.search_all(queries, k=10)
+        ranking = searcher.search_all(queries, k=1000)
         return ranking.save(f"sushi.test.run.{result_file_index}.ranking.tsv")
 
 
