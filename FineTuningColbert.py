@@ -22,7 +22,7 @@ def fine_tuning_model(training_dataset):
     #     indexer = Indexer(checkpoint='colbert-ir/colbertv2.0', config=config)
     #     indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
 
-    with Run().context(RunConfig(nranks=1)):
+    with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
         triples = 'complete_triples.jsonl'
         queries = 'complete_queries_list.tsv'
         collection = 'complete_training_set.tsv'
