@@ -48,6 +48,9 @@ def fine_tuning_model(training_dataset):
     global result_file_index
     result_file_index += 1
 
+    global labels
+    labels = [dictionary['folder'] for dictionary in training_dataset]
+
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
         config = ColBERTConfig(nbits=2, root="/sushi_trainings", )
         indexer = Indexer(checkpoint='colbert-ir/colbertv2.0', config=config)
