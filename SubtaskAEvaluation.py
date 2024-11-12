@@ -378,10 +378,10 @@ def generateSearchResults(ecf, searchFields):
             results[i]['RankedList'] = rankedFolderList
             i+=1
 
-        # df = pd.DataFrame(queries_list)
-        # df.to_csv(f'queries_list_{ctr}.tsv', sep='\t', index=True)
-        # ctr += 1
-        # train_model.write_search_results()
+        df = pd.DataFrame(queries_list)
+        df.to_csv(f'combined_queries_list.tsv', sep='\t', index=True)
+        ctr += 1
+        train_model.write_search_results()
     return results
 
 def writeSearchResults(fileName, results, runName):
@@ -488,7 +488,7 @@ if __name__ == '__main__':
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
     unix = False # Set to false for Windows, true for Unix.  This adapts the code to the locations where Terrier writes its index.
-    model = 'colbert_fine_tune' # Set to 'random' for the random model or to 'terrier' for the Terrier model
+    model = 'colbert' # Set to 'random' for the random model or to 'terrier' for the Terrier model
 
     # Run the experiment
     searchFields = ['title', 'ocr', 'folderlabel'] # Used only with Terrier.  Edit this list to index fewer fields if desired

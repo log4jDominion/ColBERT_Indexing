@@ -41,6 +41,10 @@ def create_dataset(trainingSet):
         ocr.append(dictA["ocr"])
         folder_label.append(dictA["folderlabel"])
 
+
+    df = pd.DataFrame(trainingSet)
+    df.to_csv(f'complete_training_set.tsv', sep='\t', index=True)
+
     merged_text = []
     for m, n, o in zip(title, ocr, folder_label):
         if type(o) is tuple:
@@ -48,9 +52,6 @@ def create_dataset(trainingSet):
         merged_text.append(m + ' ' + o + ' ' + n)
 
     print('Merged Text : ', merged_text[0])
-
-    df = pd.DataFrame(merged_text)
-    df.to_csv(f'training_set_{file_index}.tsv', sep='\t', index=True)
 
     global collection
     collection = merged_text
