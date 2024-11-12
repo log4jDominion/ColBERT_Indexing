@@ -7,6 +7,7 @@ from colbert.infra import Run, RunConfig, ColBERTConfig
 result_file_index = -1
 labels = []
 
+
 def fine_tuning_model(training_dataset):
     global result_file_index
     result_file_index += 1
@@ -40,31 +41,49 @@ def fine_tuning_model(training_dataset):
         indexer = Indexer(checkpoint=checkpoint_path, config=config)
         indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
 
+    # with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
+    #     config = ColBERTConfig(
+    #         root="/sushi_trainings",
+    #     )
+    #     searcher = Searcher(index="sushi.training.index", config=config)
+    #     queries = Queries("complete_queries_list.tsv")
+    #     ranking = searcher.search_all(queries, k=1000)
+    #     return ranking.save(f"sushi.test.run.{result_file_index}.ranking.tsv")
+
+
+def fetch_results(query):
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
         config = ColBERTConfig(
             root="/sushi_trainings",
         )
         searcher = Searcher(index="sushi.training.index", config=config)
-        queries = Queries("complete_queries_list.tsv")
-        ranking = searcher.search_all(queries, k=1000)
-        return ranking.save(f"sushi.test.run.{result_file_index}.ranking.tsv")
+
+        results = searcher.search(query, k=1000)
+
+        ranked_list = []
+
+        for passage_id, passage_rank, passage_score in zip(*results):
+            ranked_list.append(labels[passage_id])
+            # print(f"\t{labels[passage_id]} \t\t [{passage_rank}] \t\t {passage_score:.1f} \t\t {searcher.collection[passage_id]}")
+
+        return ranked_list
 
 
-def fetch_results(query_index, rank_file_path):
-    result = []
-    with open(rank_file_path, mode='r', newline='') as file:
-        reader = csv.reader(file, delimiter='\t')
-
-        for row in reader:
-            if len(row) >= 2:  # Ensure there are at least two columns
-                first_col_value = int(row[0])
-                second_col_value = int(row[1])
-
-                # Add the second column value to the list of the first column's key
-                if first_col_value == query_index:
-                    result.append(labels[second_col_value])
-
-    return result
+# def fetch_results(query_index, rank_file_path):
+#     result = []
+#     with open(rank_file_path, mode='r', newline='') as file:
+#         reader = csv.reader(file, delimiter='\t')
+#
+#         for row in reader:
+#             if len(row) >= 2:  # Ensure there are at least two columns
+#                 first_col_value = int(row[0])
+#                 second_col_value = int(row[1])
+#
+#                 # Add the second column value to the list of the first column's key
+#                 if first_col_value == query_index:
+#                     result.append(labels[second_col_value])
+#
+#     return result
 
 
 if __name__ == '__main__':
