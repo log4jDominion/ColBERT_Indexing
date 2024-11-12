@@ -11,40 +11,42 @@ labels = []
 collection = []
 
 
-# def create_dataset(training_set):
-#     id = []
-#     docno = []
-#     folder = []
-#     box = []
-#     title = []
-#     ocr = []
-#     folder_label = []
-#
-#     for idx, dictA in enumerate(training_set):
-#         id.append(idx)
-#         docno.append(dictA["docno"])
-#         folder.append(dictA["folder"])
-#         box.append(dictA["box"])
-#         title.append(dictA["title"])
-#         ocr.append(dictA["ocr"])
-#         folder_label.append(dictA["folderlabel"])
-#
-#     merged_text = []
-#     for m, n, o in zip(title, ocr, folder_label):
-#         if type(o) is tuple:
-#             o = ''.join(o)
-#         merged_text.append(m + ' ' + o + ' ' + n)
-#
-#     print('Merged Text : ', merged_text[0])
-#
-#     global collection
-#     collection = merged_text
-#
-#     global labels
-#     labels = folder
+def create_dataset(training_set):
+    id = []
+    docno = []
+    folder = []
+    box = []
+    title = []
+    ocr = []
+    folder_label = []
+
+    for idx, dictA in enumerate(training_set):
+        id.append(idx)
+        docno.append(dictA["docno"])
+        folder.append(dictA["folder"])
+        box.append(dictA["box"])
+        title.append(dictA["title"])
+        ocr.append(dictA["ocr"])
+        folder_label.append(dictA["folderlabel"])
+
+    merged_text = []
+    for m, n, o in zip(title, ocr, folder_label):
+        if type(o) is tuple:
+            o = ''.join(o)
+        merged_text.append(m + ' ' + o + ' ' + n)
+
+    print('Merged Text : ', merged_text[0])
+
+    global collection
+    collection = merged_text
+
+    global labels
+    labels = folder
 
 
 def fine_tuning_model(training_dataset):
+    create_dataset(training_dataset)
+
     global result_file_index
     result_file_index += 1
 
@@ -54,7 +56,7 @@ def fine_tuning_model(training_dataset):
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
         config = ColBERTConfig(nbits=2, root="/sushi_trainings", )
         indexer = Indexer(checkpoint='colbert-ir/colbertv2.0', config=config)
-        indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
+        indexer.index(name="sushi.training.index", collection=collection, overwrite=True)
 
     # with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):  #     triples = 'complete_triples.jsonl'  #     queries = 'complete_queries_list.tsv'  #     collection = 'complete_training_set.tsv'  #  #     config = ColBERTConfig(  #         bsize=32,  #         root='/sushi_trainings')  #  #     trainer = Trainer(triples=triples, queries=queries, collection=collection, config=config)  #  #     checkpoint_path = trainer.train()  #  #     print(f"Saved checkpoint to {checkpoint_path}...")  #  #     indexer = Indexer(checkpoint=checkpoint_path, config=config)  #     indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
 
@@ -64,7 +66,7 @@ def fine_tuning_model(training_dataset):
 def fetch_results(query, index):
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
         config = ColBERTConfig(root="/sushi_trainings", )
-        searcher = Searcher(index="sushi.training.index", collection="complete_training_set.tsv", config=config)
+        searcher = Searcher(index="sushi.training.index", collection=collection, config=config)
 
         results = searcher.search(query, k=1000)
 
