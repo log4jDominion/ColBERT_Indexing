@@ -161,9 +161,13 @@ def load_collection(collection_path):
         for line_idx, line in enumerate(f):
             if line_idx % (1000*1000) == 0:
                 print(f'{line_idx // 1000 // 1000}M', end=' ', flush=True)
-
-            pid, passage, *rest = line.strip('\n\r ').split('\t')
-            assert pid == 'id' or int(pid) == line_idx, f"pid={pid}, line_idx={line_idx}"
+            try:
+                pid, passage, *rest = line.strip('\n\r ').split('\t')
+                assert pid == 'id' or int(pid) == line_idx, f"pid={pid}, line_idx={line_idx}"
+            except Exception as e:
+                print(f'File path: {collection_path}')
+                print(f'Error idx: {line_idx}')
+                print(f'Error line: {line}')
 
             if len(rest) >= 1:
                 title = rest[0]
