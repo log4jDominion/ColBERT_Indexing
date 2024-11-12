@@ -51,7 +51,7 @@ def fine_tuning_model(training_dataset):
     #     return ranking.save(f"sushi.test.run.{result_file_index}.ranking.tsv")
 
 
-def fetch_results(query):
+def fetch_results(query, index):
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
         config = ColBERTConfig(
             root="/sushi_trainings",

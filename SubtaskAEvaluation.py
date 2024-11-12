@@ -357,7 +357,7 @@ def search(query, query_index, index):
     elif model=='terrier':
         return terrierSearch(query, index)
     elif model=='colbert_fine_tune':
-        return fine_tuned_model.fetch_results(query_index, index)
+        return fine_tuned_model.fetch_results(query, index)
     else:
         return train_model.colbert_search(query)
 
@@ -483,8 +483,8 @@ if __name__ == '__main__':
 
 
     # Set global variables
-    #control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1.json'
-    #prefix = '/Users/shashank/Research/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
+    # control_file = 'Ntcir18SushiDryRunExperimentControlFileV1.1Dev.json'
+    # prefix = '/Users/shashank/Research/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     prefix = '/fs/clip-projects/archive_search/sushi/' # Absolute path for the sushi directory where all files and indexes will be.  Don't use relative paths; doing so alters terrier's behavior in a way that breaks this code.
     seq=0 # Controls index segments
     unix = False # Set to false for Windows, true for Unix.  This adapts the code to the locations where Terrier writes its index.
