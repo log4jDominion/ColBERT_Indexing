@@ -54,7 +54,7 @@ def fine_tuning_model(training_dataset):
     labels = [dictionary['folder'] for dictionary in training_dataset]
 
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
-        config = ColBERTConfig(nbits=2, root="/sushi_trainings", )
+        config = ColBERTConfig(nbits=2, doc_maxlen=300, kmeans_niters=4)
         indexer = Indexer(checkpoint='colbert-ir/colbertv2.0', config=config)
         indexer.index(name="sushi.training.index", collection=collection, overwrite=True)
 
@@ -65,8 +65,7 @@ def fine_tuning_model(training_dataset):
 
 def fetch_results(query, index):
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
-        config = ColBERTConfig(root="/sushi_trainings", )
-        searcher = Searcher(index="sushi.training.index", collection=collection, config=config)
+        searcher = Searcher(index="sushi.training.index", collection=collection)
 
         results = searcher.search(query, k=1000)
 
