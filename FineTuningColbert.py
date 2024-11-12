@@ -1,5 +1,7 @@
 import csv
 
+import pandas
+
 from colbert import Indexer, Searcher, Trainer
 from colbert.data import Queries
 from colbert.infra import Run, RunConfig, ColBERTConfig
@@ -15,31 +17,34 @@ def fine_tuning_model(training_dataset):
     global labels
     labels = [dictionary['folder'] for dictionary in training_dataset]
 
-    # with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
-    #     config = ColBERTConfig(
-    #         nbits=2,
-    #         root="/sushi_trainings",
-    #     )
-    #     indexer = Indexer(checkpoint='colbert-ir/colbertv2.0', config=config)
-    #     indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
+    df = pandas.DataFrame(labels)
+    df.to_csv('complete_lables.tsv', sep='\t', index=True)
 
     with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
-        triples = 'complete_triples.jsonl'
-        queries = 'complete_queries_list.tsv'
-        collection = 'complete_training_set.tsv'
-
         config = ColBERTConfig(
-            bsize=32,
-            root='/sushi_trainings')
-
-        trainer = Trainer(triples=triples, queries=queries, collection=collection, config=config)
-
-        checkpoint_path = trainer.train()
-
-        print(f"Saved checkpoint to {checkpoint_path}...")
-
-        indexer = Indexer(checkpoint=checkpoint_path, config=config)
+            nbits=2,
+            root="/sushi_trainings",
+        )
+        indexer = Indexer(checkpoint='colbert-ir/colbertv2.0', config=config)
         indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
+
+    # with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
+    #     triples = 'complete_triples.jsonl'
+    #     queries = 'complete_queries_list.tsv'
+    #     collection = 'complete_training_set.tsv'
+    #
+    #     config = ColBERTConfig(
+    #         bsize=32,
+    #         root='/sushi_trainings')
+    #
+    #     trainer = Trainer(triples=triples, queries=queries, collection=collection, config=config)
+    #
+    #     checkpoint_path = trainer.train()
+    #
+    #     print(f"Saved checkpoint to {checkpoint_path}...")
+    #
+    #     indexer = Indexer(checkpoint=checkpoint_path, config=config)
+    #     indexer.index(name="sushi.training.index", collection="complete_training_set.tsv", overwrite=True)
 
     # with Run().context(RunConfig(nranks=1, experiment="sushi_trainings")):
     #     config = ColBERTConfig(
